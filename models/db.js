@@ -1,9 +1,11 @@
+var env = require('../env');
+
 var mysql      = require('mysql');
 var connection = mysql.createConnection({
-    host     : 'mydbinstance.cdvu1flvszaj.ap-northeast-1.rds.amazonaws.com:3306',
-    user     : 'ferrizal',
-    password : 'justf0rtest1ng',
-    database : 'commerce'
+    host     : process.env['DB_HOST'],
+    user     : process.env['DB_USER'],
+    password : process.env['DB_PASSWORD'],
+    database : process.env['DB_NAME']
 });
 
 connection.connect();
