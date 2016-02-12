@@ -1,4 +1,4 @@
-var db = require('./db');
+var connection = require('./db');
 var schemas = require('./schemas');
 var _ = require('lodash');
 
@@ -56,7 +56,7 @@ Product.prototype.findAll = function (filters, callback) {
         }
     }
 
-    db.query(sql, bindParams, function(err, rows) {
+    connection.query(sql, bindParams, function(err, rows) {
         if (err) {
             throw err;
         }
@@ -70,7 +70,7 @@ Product.prototype.findAll = function (filters, callback) {
 
 Product.prototype.find = function (id, callback) {
     var sql = 'SELECT * FROM products where id = ?';
-    db.query(sql, [id], function(err, rows, fields) {
+    connection.query(sql, [id], function(err, rows, fields) {
         if (err) {
             throw err;
         }
@@ -93,7 +93,7 @@ Product.prototype.findByCategoryId = function (categoryId, filters, callback) {
         }
     }
 
-    db.query(sql, bindParams, function(err, rows) {
+    connection.query(sql, bindParams, function(err, rows) {
         if (err) {
             throw err;
         }
@@ -109,7 +109,7 @@ Product.prototype.save = function (req, callback) {
     var now = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     var sql = "INSERT INTO products (sku, name, description, fg_status, created_on, modified_on) ";
     sql += "VALUES (?, ?, ?, 0, '"+now+"', '"+now+"')";
-    db.query(sql, [
+    connection.query(sql, [
         this.data.sku,
         this.data.name,
         this.data.description
@@ -135,7 +135,7 @@ Product.prototype.update = function (id, callback) {
     sql += "SET "+setSql+", modified_on = '"+now+"' ";
     sql += "WHERE id = ? ";
 
-    db.query(sql, setFieldVals, function(err) {
+    connection.query(sql, setFieldVals, function(err) {
 
     });
 
