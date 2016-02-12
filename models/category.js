@@ -1,4 +1,4 @@
-var connection = require('./db');
+var pool = require('./db');
 var schemas = require('./schemas');
 var _ = require('lodash');
 
@@ -16,13 +16,16 @@ Category.prototype.sanitize = function (data) {
 
 Category.prototype.find = function (id, callback) {
     var sql = "SELECT * FROM categories where id=?";
-    connection.query(sql, [id], function(err, rows) {
-        if (err) {
-            throw err;
-        }
-        //connection.end();
-        rows.forEach(function(item) {
-            callback(new Category(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, [id], function (err, rows) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            //connection.end();
+            rows.forEach(function (item) {
+                callback(new Category(item));
+            });
         });
     });
 };
@@ -30,16 +33,19 @@ Category.prototype.find = function (id, callback) {
 Category.prototype.findPath = function (id, callback) {
     var sql = "SELECT * FROM categories node, categories parent ";
     sql += "WHERE node.lft BETWEEN parent.lft AND parent.rgt AND node.id=? AND parent.id!=1 ORDER BY node.lft;";
-    connection.query(sql, [id], function(err, parents) {
-        if (err) {
-            throw err;
-        }
-        //connection.end();
-        var categories = [];
-        parents.forEach(function(item) {
-            categories.push(new Category(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, [id], function (err, parents) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            //connection.end();
+            var categories = [];
+            parents.forEach(function (item) {
+                categories.push(new Category(item));
+            });
+            callback(categories);
         });
-        callback(categories);
     });
 };
 
@@ -55,51 +61,58 @@ Category.prototype.findChildren = function (id, isImmediate, activeOnly, callbac
     sql += isImmediate == true ? "HAVING depth = 1 " : "";
     sql += "ORDER BY node.lft";
 
-    connection.query(sql, [id], function(err, children) {
-        if (err) {
-            throw err;
-        }
-        //connection.end();
-        var categories = [];
-        children.forEach(function(item) {
-            categories.push(new Category(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, [id], function (err, children) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            //connection.end();
+            var categories = [];
+            children.forEach(function (item) {
+                categories.push(new Category(item));
+            });
+            callback(categories);
         });
-        callback(categories);
     });
 };
 
 Category.prototype.save = function (callback) {
     var self = this;
     var now = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    var sql = "LOCK TABLE categories WRITE; ";
-    connection.query(sql, function(err) {
-        if (err) {
-            throw err;
-        }
-        var sql = "SELECT @myLeft := lft FROM categories WHERE id="+self.data.parentId+";";
-        connection.query(sql, function(err) {
+
+    pool.getConnection(function(err, connection) {
+        var sql = "LOCK TABLE categories WRITE; ";
+        connection.query(sql, function (err) {
             if (err) {
                 throw err;
             }
-            var sql = "UPDATE categories SET rgt=rgt+2 WHERE rgt > @myLeft;";
-            connection.query(sql, function(err) {
+            var sql = "SELECT @myLeft := lft FROM categories WHERE id=" + self.data.parentId + ";";
+            connection.query(sql, function (err) {
                 if (err) {
                     throw err;
                 }
-                var sql = "UPDATE categories SET lft=lft+2 WHERE lft > @myLeft;";
-                connection.query(sql, function(err) {
+                var sql = "UPDATE categories SET rgt=rgt+2 WHERE rgt > @myLeft;";
+                connection.query(sql, function (err) {
                     if (err) {
                         throw err;
                     }
-                    var sql = "INSERT INTO categories (name, description, lft, rgt, fg_status, created_on, modified_on) ";
-                    sql += "VALUES ('"+self.data.name+"', '"+self.data.description+"', @myLeft+1, @myLeft+2, 1, '"+now+"', '"+now+"');";
-                    connection.query(sql, function(err) {
+                    var sql = "UPDATE categories SET lft=lft+2 WHERE lft > @myLeft;";
+                    connection.query(sql, function (err) {
                         if (err) {
                             throw err;
                         }
-                        var sql = "UNLOCK TABLES;";
-                        connection.query(sql, function(err) {
-                            //connection.end();
+                        var sql = "INSERT INTO categories (name, description, lft, rgt, fg_status, created_on, modified_on) ";
+                        sql += "VALUES ('" + self.data.name + "', '" + self.data.description + "', @myLeft+1, @myLeft+2, 1, '" + now + "', '" + now + "');";
+                        connection.query(sql, function (err) {
+                            if (err) {
+                                throw err;
+                            }
+                            var sql = "UNLOCK TABLES;";
+                            connection.query(sql, function (err) {
+                                connection.release();
+                                //connection.end();
+                            });
                         });
                     });
                 });
@@ -125,11 +138,13 @@ Category.prototype.update = function (id, callback) {
     sql += "SET "+setSql+", modified_on = '"+now+"' ";
     sql += "WHERE id = ? ";
 
-    connection.query(sql, setFieldVals, function(err) {
-        if (err) {
-            throw err;
-        }
-        //connection.end();
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, setFieldVals, function (err) {
+            if (err) {
+                throw err;
+            }
+            //connection.end();
+        });
     });
 };
 

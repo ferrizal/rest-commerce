@@ -65,8 +65,7 @@ exports.post = function(req, res) {
                 description: parsedData.data.attributes.description,
                 category_id: parsedData.data.relationships.category.data.id
             };
-            var ProductModel = new Product();
-            ProductModel.sanitize(data);
+            var ProductModel = new Product(data);
             ProductModel.save(req, function() {
 
             });
@@ -94,7 +93,8 @@ exports.patch = function(req, res) {
                 sku: parsedData.data.attributes.sku,
                 name: parsedData.data.attributes.name,
                 description: parsedData.data.attributes.description,
-                fg_status: parsedData.data.attributes.fg_status
+                fg_status: parsedData.data.attributes.fg_status,
+                category_id: parsedData.data.attributes.category_id
             };
             var ProductModel = new Product(data);
             ProductModel.update(req.params.productId, function() {

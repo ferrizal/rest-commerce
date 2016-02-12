@@ -1,4 +1,4 @@
-var connection = require('./db');
+var pool = require('./db');
 var schemas = require('./schemas');
 var _ = require('lodash');
 
@@ -56,26 +56,32 @@ Product.prototype.findAll = function (filters, callback) {
         }
     }
 
-    connection.query(sql, bindParams, function(err, rows) {
-        if (err) {
-            throw err;
-        }
-        var products = [];
-        rows.forEach(function(item) {
-            products.push(new Product(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, bindParams, function (err, rows) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            var products = [];
+            rows.forEach(function (item) {
+                products.push(new Product(item));
+            });
+            callback(products);
         });
-        callback(products);
     });
 };
 
 Product.prototype.find = function (id, callback) {
     var sql = 'SELECT * FROM products where id = ?';
-    connection.query(sql, [id], function(err, rows, fields) {
-        if (err) {
-            throw err;
-        }
-        rows.forEach(function(item) {
-            callback(new Product(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, [id], function (err, rows, fields) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            rows.forEach(function (item) {
+                callback(new Product(item));
+            });
         });
     });
 };
@@ -93,28 +99,35 @@ Product.prototype.findByCategoryId = function (categoryId, filters, callback) {
         }
     }
 
-    connection.query(sql, bindParams, function(err, rows) {
-        if (err) {
-            throw err;
-        }
-        var products = [];
-        rows.forEach(function(item) {
-            products.push(new Product(item));
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, bindParams, function (err, rows) {
+            connection.release();
+            if (err) {
+                throw err;
+            }
+            var products = [];
+            rows.forEach(function (item) {
+                products.push(new Product(item));
+            });
+            callback(products);
         });
-        callback(products);
     });
 };
 
 Product.prototype.save = function (req, callback) {
+    var self = this;
     var now = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    var sql = "INSERT INTO products (sku, name, description, fg_status, created_on, modified_on) ";
-    sql += "VALUES (?, ?, ?, 0, '"+now+"', '"+now+"')";
-    connection.query(sql, [
-        this.data.sku,
-        this.data.name,
-        this.data.description
-    ], function(err) {
-
+    var sql = "INSERT INTO products (sku, name, description, category_id, fg_status, created_on, modified_on) ";
+    sql += "VALUES (?, ?, ?, ?, 0, '"+now+"', '"+now+"')";
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, [
+            self.data.sku,
+            self.data.name,
+            self.data.description,
+            self.data.category_id
+        ], function (err) {
+            connection.release();
+        });
     });
 };
 
@@ -134,11 +147,12 @@ Product.prototype.update = function (id, callback) {
     var sql = "UPDATE products ";
     sql += "SET "+setSql+", modified_on = '"+now+"' ";
     sql += "WHERE id = ? ";
-
-    connection.query(sql, setFieldVals, function(err) {
-
+console.log(sql);
+    pool.getConnection(function(err, connection) {
+        connection.query(sql, setFieldVals, function (err) {
+            connection.release();
+        });
     });
-
 };
 
 module.exports = Product;
