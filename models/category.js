@@ -14,16 +14,13 @@ Category.prototype.sanitize = function (data) {
     this.data = _.pick(_.defaults(data, schema), _.keys(schema));
 };
 
-Category.prototype.findAll = function (filters, callback) {
-
-};
-
 Category.prototype.find = function (id, callback) {
     var sql = "SELECT * FROM categories where id=?";
     db.query(sql, [id], function(err, rows) {
         if (err) {
             throw err;
         }
+        db.end();
         rows.forEach(function(item) {
             callback(new Category(item));
         });
@@ -37,6 +34,7 @@ Category.prototype.findPath = function (id, callback) {
         if (err) {
             throw err;
         }
+        db.end();
         var categories = [];
         parents.forEach(function(item) {
             categories.push(new Category(item));
@@ -61,6 +59,7 @@ Category.prototype.findChildren = function (id, isImmediate, activeOnly, callbac
         if (err) {
             throw err;
         }
+        db.end();
         var categories = [];
         children.forEach(function(item) {
             categories.push(new Category(item));
@@ -92,15 +91,15 @@ Category.prototype.save = function (callback) {
                     if (err) {
                         throw err;
                     }
-                    var sql = "INSERT INTO categories (name, lft, rgt, fg_status, created_on, modified_on) ";
-                    sql += "VALUES ('"+self.data.name+"', @myLeft+1, @myLeft+2, 1, '"+now+"', '"+now+"');";
+                    var sql = "INSERT INTO categories (name, description, lft, rgt, fg_status, created_on, modified_on) ";
+                    sql += "VALUES ('"+self.data.name+"', '"+self.data.description+"', @myLeft+1, @myLeft+2, 1, '"+now+"', '"+now+"');";
                     db.query(sql, function(err) {
                         if (err) {
                             throw err;
                         }
                         var sql = "UNLOCK TABLES;";
                         db.query(sql, function(err) {
-
+                            db.end();
                         });
                     });
                 });
@@ -110,7 +109,28 @@ Category.prototype.save = function (callback) {
 };
 
 Category.prototype.update = function (id, callback) {
+    var self = this;
+    var setFields = [];
+    var setFieldVals = [];
+    Object.keys(self.data).forEach(function(element) {
+        if (self.data[element] !== null) {
+            setFields.push(element+"=?");
+            setFieldVals.push(self.data[element]);
+        }
+    });
+    setFieldVals.push(id);
+    var setSql = setFields.join(',');
+    var now = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var sql = "UPDATE categories ";
+    sql += "SET "+setSql+", modified_on = '"+now+"' ";
+    sql += "WHERE id = ? ";
 
+    db.query(sql, setFieldVals, function(err) {
+        if (err) {
+            throw err;
+        }
+        db.end();
+    });
 };
 
 module.exports = Category;

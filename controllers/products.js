@@ -1,15 +1,33 @@
 var Product = require('../models/product');
+var Category = require('../models/category');
 var ProductTransformer = require('../transformers/product');
+var CategoryTransformer = require('../transformers/category');
 var url = require('url');
 
 exports.get = function(req, res) {
+    var url_parts = url.parse(req.url, true);
+    var query = url_parts.query;
     Product.prototype.find(req.params.productId, function (product) {
         var resData = ProductTransformer.prototype.transform(product, res, req);
 
         res.status(200);
-        res.contentType('application/json');
-        res.json(resData);
-        res.end();
+        res.contentType('application/vnd.api+json');
+
+        if (query.include) {
+            var includes = query.include.split(',');
+            resData.included = [];
+            if (includes.indexOf('category') >= 0) {
+                Category.prototype.find(product.data.category_id, function (category) {
+                    var cat = CategoryTransformer.prototype.transform(category);
+                    resData.included.push(cat.data);
+                    res.json(resData);
+                    res.end();
+                });
+            }
+        } else {
+            res.json(resData);
+            res.end();
+        }
     });
 };
 
@@ -20,7 +38,7 @@ exports.getAll = function(req, res) {
         var resData = ProductTransformer.prototype.transformCollection(products, res, req);
 
         res.status(200);
-        res.contentType('application/json');
+        res.contentType('application/vnd.api+json');
         res.json(resData);
         res.end();
     });
@@ -44,7 +62,8 @@ exports.post = function(req, res) {
                 id: null,
                 sku: parsedData.data.attributes.sku,
                 name: parsedData.data.attributes.name,
-                description: parsedData.data.attributes.description
+                description: parsedData.data.attributes.description,
+                category_id: parsedData.data.relationships.category.data.id
             };
             var ProductModel = new Product();
             ProductModel.sanitize(data);

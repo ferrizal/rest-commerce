@@ -21,11 +21,11 @@ router.post('/', function(req, res, next) {
     require('../controllers/categories').post(req, res);
 });
 
-router.patch('/:productId', function(req, res, next) {
+router.patch('/:categoryId', function(req, res, next) {
     require('../controllers/categories').patch(req, res);
 });
 
-router.delete('/:productId', function(req, res, next) {
+router.delete('/:categoryId', function(req, res, next) {
     require('../controllers/categories').delete(req, res);
 });
 

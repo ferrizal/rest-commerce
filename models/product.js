@@ -18,6 +18,9 @@ function _filtersToSql(filters) {
                     sqlFilters.push("fg_status=?");
                     bindParams.push(filters[element]);
                     break;
+                case 'category_id':
+                    sqlFilters.push("category_id=?");
+                    bindParams.push(filters[element]);
             }
         });
     }

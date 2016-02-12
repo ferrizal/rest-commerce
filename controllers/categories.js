@@ -12,11 +12,11 @@ exports.getAll = function(req, res) {
 
 exports.get = function(req, res) {
     var categoryId = req.params.categoryId;
-    Category.prototype.find(req.params.categoryId, function (category) {
+    Category.prototype.find(categoryId, function (category) {
         var resData = CategoryTransformer.prototype.transform(category);
 
         res.status(200);
-        res.contentType('application/json');
+        res.contentType('application/vnd.api+json');
         res.json(resData);
         res.end();
     });
@@ -28,7 +28,7 @@ exports.getPath = function(req, res) {
         var resData = CategoryTransformer.prototype.transformPath(categoryId, categories);
 
         res.status(200);
-        res.contentType('application/json');
+        res.contentType('application/vnd.api+json');
         res.json(resData);
         res.end();
     });
@@ -49,14 +49,25 @@ exports.getChildren = function(req, res) {
 exports.getProducts = function(req, res) {
     var Product = require('../models/product');
     var ProductTransformer = require('../transformers/product');
-    Product.prototype.findByCategoryId(req.params.categoryId, function (products) {
+    var query = {
+        category_id: req.params.categoryId
+    };
+    Product.prototype.findAll(query, function (products) {
+        var resData = ProductTransformer.prototype.transformCollection(products, res, req);
+
+        res.status(200);
+        res.contentType('application/vnd.api+json');
+        res.json(resData);
+        res.end();
+    });
+    /*Product.prototype.findByCategoryId(req.params.categoryId, function (products) {
         var resData = ProductTransformer.prototype.transformCollection(products);
 
         res.status(200);
         res.contentType('application/json');
         res.json(resData);
         res.end();
-    });
+    });*/
 };
 
 exports.post = function(req, res) {
@@ -75,7 +86,8 @@ exports.post = function(req, res) {
         } else {
             var data = {
                 parentId: parsedData.data.attributes.parentId,
-                name: parsedData.data.attributes.name
+                name: parsedData.data.attributes.name,
+                description: parsedData.data.attributes.description
             };
             var CategoryModel = new Category(data);
             CategoryModel.save(function() {
@@ -101,11 +113,9 @@ exports.patch = function(req, res) {
             CategoryTransformer.prototype.transformError400(res);
         } else {
             var data = {
-                id: null,
-                /*sku: parsedData.data.attributes.sku,
                 name: parsedData.data.attributes.name,
                 description: parsedData.data.attributes.description,
-                fg_status: parsedData.data.attributes.fg_status*/
+                fg_status: parsedData.data.attributes.fg_status
             };
             var CategoryModel = new Category(data);
             CategoryModel.update(req.params.categoryId, function() {

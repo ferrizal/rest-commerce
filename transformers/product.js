@@ -10,7 +10,7 @@ ProductTransformer.prototype.transformError400 = function(res) {
 function _transformSingleData(product) {
     return {
         links: {
-            self: '/product/'+product.data.id
+            self: '/products/'+product.data.id
         },
         type: 'product',
         id: product.data.id,
@@ -21,7 +21,10 @@ function _transformSingleData(product) {
             fg_status: product.data.fg_status
         },
         relationships: {
-
+            category: {
+                type: "category",
+                id: product.data.category_id
+            }
         }
     };
 }

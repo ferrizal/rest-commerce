@@ -3,6 +3,7 @@ var schemas = {
         id: null,
         sku: null,
         name: null,
+        category_id: null,
         description: null,
         fg_status: null
     },
